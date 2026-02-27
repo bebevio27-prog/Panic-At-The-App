@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Sei al sicuro</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0e1a;
+    color: #c8d8f0;
+    font-family: 'Georgia', serif;
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+  }
+
+  /* Stelle di sfondo */
+  .stars {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .star {
+    position: absolute;
+    border-radius: 50%;
+    background: white;
+    animation: twinkle var(--d) ease-in-out infinite alternate;
+    opacity: 0;
+  }
+  @keyframes twinkle {
+    from { opacity: var(--min); }
+    to   { opacity: var(--max); }
+  }
+
+  /* Nebulosa morbida */
+  .nebula {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 30% 40%, rgba(60,40,120,0.25) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 60% at 70% 60%, rgba(20,60,100,0.2) 0%, transparent 70%);
+  }
+
+  /* Contenitore principale */
+  .screen {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100dvh;
+    width: 100%;
+    padding: 2rem;
+    transition: opacity 0.8s ease;
+  }
+  .screen.hidden { opacity: 0; pointer-events: none; position: absolute; }
+
+  /* Schermata SOS iniziale */
+  #screen-sos {
+    gap: 2rem;
+    text-align: center;
+  }
+  .sos-title {
+    font-size: clamp(1.4rem, 5vw, 2rem);
+    color: #a8c4e8;
+    font-weight: normal;
+    letter-spacing: 0.05em;
+    line-height: 1.6;
+  }
+  .sos-sub {
+    font-size: clamp(0.9rem, 3vw, 1.1rem);
+    color: #6a8aaa;
+    line-height: 1.8;
+    max-width: 340px;
+  }
+  .sos-btn {
+    margin-top: 1rem;
+    background: rgba(80, 100, 160, 0.2);
+    border: 1px solid rgba(100, 140, 200, 0.35);
+    color: #a8c4e8;
+    padding: 1.1rem 3rem;
+    border-radius: 50px;
+    font-size: 1.05rem;
+    font-family: 'Georgia', serif;
+    cursor: pointer;
+    transition: background 0.4s, transform 0.3s;
+    letter-spacing: 0.06em;
+  }
+  .sos-btn:hover, .sos-btn:active {
+    background: rgba(80, 100, 160, 0.4);
+    transform: scale(1.03);
+  }
+
+  /* Respiro */
+  #screen-breath {
+    gap: 2.5rem;
+    text-align: center;
+  }
+  .breath-label {
+    font-size: clamp(1rem, 4vw, 1.3rem);
+    color: #8aafd4;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    min-height: 2rem;
+    transition: opacity 0.6s;
+  }
+  .breath-circle-wrap {
+    position: relative;
+    width: clamp(160px, 40vw, 220px);
+    height: clamp(160px, 40vw, 220px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .breath-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px solid rgba(120, 170, 230, 0.18);
+    animation: pulse-ring 4s ease-in-out infinite;
+  }
+  .breath-ring:nth-child(2) { animation-delay: 1.3s; }
+  .breath-ring:nth-child(3) { animation-delay: 2.6s; }
+  @keyframes pulse-ring {
+    0%   { transform: scale(1);    opacity: 0.5; }
+    100% { transform: scale(1.9);  opacity: 0; }
+  }
+  .breath-circle {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, rgba(120,160,230,0.35), rgba(50,80,160,0.15));
+    border: 1px solid rgba(120,170,230,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.05s linear;
+    box-shadow: 0 0 40px rgba(80,120,200,0.12), inset 0 0 30px rgba(80,120,200,0.08);
+  }
+  .breath-counter {
+    font-size: clamp(2rem, 8vw, 3rem);
+    color: rgba(180,210,240,0.7);
+    font-weight: 100;
+    letter-spacing: 0.05em;
+  }
+  .breath-phrase {
+    font-size: clamp(0.85rem, 3vw, 1rem);
+    color: #5a7a9a;
+    font-style: italic;
+    max-width: 280px;
+    line-height: 1.7;
+    min-height: 3rem;
+    transition: opacity 0.6s;
+  }
+  .next-btn {
+    background: transparent;
+    border: none;
+    color: #4a6a8a;
+    font-size: 0.85rem;
+    font-family: 'Georgia', serif;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    padding: 0.5rem 1rem;
+    transition: color 0.3s;
+    margin-top: 0.5rem;
+  }
+  .next-btn:hover { color: #8aafd4; }
+
+  /* Grounding */
+  #screen-ground {
+    gap: 1.8rem;
+    text-align: center;
+    max-width: 420px;
+  }
+  .ground-step {
+    font-size: clamp(1.6rem, 6vw, 2.2rem);
+    color: rgba(120,170,230,0.6);
+    font-weight: 100;
+  }
+  .ground-title {
+    font-size: clamp(1rem, 4vw, 1.35rem);
+    color: #8aafd4;
+    line-height: 1.6;
+    max-width: 320px;
+  }
+  .ground-desc {
+    font-size: clamp(0.82rem, 2.8vw, 0.95rem);
+    color: #4a6a8a;
+    line-height: 1.8;
+    max-width: 300px;
+    font-style: italic;
+  }
+  .ground-items {
+    display: flex;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .ground-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(120,170,230,0.4);
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.4s;
+  }
+  .ground-dot.done { background: rgba(120,170,230,0.5); }
+  .ground-btn {
+    background: rgba(60,80,130,0.18);
+    border: 1px solid rgba(100,140,200,0.3);
+    color: #7aaad0;
+    padding: 0.85rem 2.5rem;
+    border-radius: 50px;
+    font-size: 0.95rem;
+    font-family: 'Georgia', serif;
+    cursor: pointer;
+    transition: background 0.4s;
+    letter-spacing: 0.05em;
+  }
+  .ground-btn:hover { background: rgba(60,80,130,0.35); }
+
+  /* Fine */
+  #screen-end {
+    gap: 2rem;
+    text-align: center;
+  }
+  .end-icon {
+    font-size: 2.5rem;
+    animation: float 4s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
+  .end-title {
+    font-size: clamp(1.3rem, 5vw, 1.8rem);
+    color: #a8c4e8;
+    font-weight: normal;
+    line-height: 1.6;
+  }
+  .end-sub {
+    font-size: clamp(0.85rem, 3vw, 1rem);
+    color: #5a7a9a;
+    line-height: 1.9;
+    max-width: 320px;
+    font-style: italic;
+  }
+  .restart-btn {
+    background: transparent;
+    border: 1px solid rgba(100,140,200,0.25);
+    color: #5a7a9a;
+    padding: 0.7rem 2rem;
+    border-radius: 50px;
+    font-size: 0.88rem;
+    font-family: 'Georgia', serif;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 0.06em;
+  }
+  .restart-btn:hover { color: #8aafd4; border-color: rgba(100,140,200,0.5); }
+
+  /* Nav dots */
+  .nav-dots {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.5rem;
+    z-index: 10;
+  }
+  .nav-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(100,140,200,0.2);
+    transition: background 0.4s;
+  }
+  .nav-dot.active { background: rgba(100,140,200,0.6); }
+</style>
+</head>
+<body>
+
+<div class="nebula"></div>
+<canvas class="stars" id="stars"></canvas>
+
+<!-- SCHERMATA 1: SOS -->
+<div class="screen" id="screen-sos">
+  <p class="sos-title">Panic! At the App<br>Tranquill*, non stai morendo.</p>
+  <p class="sos-sub">La tua mente ha perso il controllo.<br>Non c'è nessun pericolo reale.<br>Respira con me.</p>
+  <button class="sos-btn" onclick="goTo('breath')">Inizia →</button>
+</div>
+
+<!-- SCHERMATA 2: RESPIRO -->
+<div class="screen hidden" id="screen-breath">
+  <div class="breath-label" id="breath-label">Preparati...</div>
+  <div class="breath-circle-wrap">
+    <div class="breath-ring"></div>
+    <div class="breath-ring"></div>
+    <div class="breath-ring"></div>
+    <div class="breath-circle" id="breath-circle">
+      <span class="breath-counter" id="breath-counter"></span>
+    </div>
+  </div>
+  <div class="breath-phrase" id="breath-phrase">Mettiti sedut*.</div>
+  <button class="next-btn" id="breath-next" style="opacity:0;pointer-events:none" onclick="goTo('ground')">Continua →</button>
+</div>
+
+<!-- SCHERMATA 3: GROUNDING -->
+<div class="screen hidden" id="screen-ground">
+  <div class="ground-step" id="g-num">5</div>
+  <div class="ground-title" id="g-title">Guarda intorno a te.<br>Trova 5 cose che riesci a vedere.</div>
+  <div class="ground-desc" id="g-desc">Possono essere qualsiasi cosa — un oggetto, un colore, una forma.</div>
+  <div class="ground-items" id="g-dots"></div>
+  <button class="ground-btn" id="g-btn" onclick="groundNext()">Ho trovato una →</button>
+</div>
+
+<!-- SCHERMATA 4: FINE -->
+<div class="screen hidden" id="screen-end">
+  <div class="end-icon">🌙</div>
+  <p class="end-title">Hai fatto un ottimo lavoro.<br>Visto? Sei ancora qui.</p>
+  <p class="end-sub">Il panico è solo un'onda.<br>Non puoi fermarla,<br>ma anche il mare prima o poi è calmo.</p>
+  <button class="restart-btn" onclick="goTo('sos')">Ricomincia da capo</button>
+</div>
+
+<div class="nav-dots">
+  <div class="nav-dot active" id="dot-0"></div>
+  <div class="nav-dot" id="dot-1"></div>
+  <div class="nav-dot" id="dot-2"></div>
+  <div class="nav-dot" id="dot-3"></div>
+</div>
+
+<script>
+// ─── Stelle ───────────────────────────────────────────
+const canvas = document.getElementById('stars');
+const ctx = canvas.getContext('2d');
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+for (let i = 0; i < 90; i++) {
+  const el = document.createElement('div');
+  el.className = 'star';
+  const size = Math.random() * 1.8 + 0.4;
+  el.style.cssText = `
+    left:${Math.random()*100}%;
+    top:${Math.random()*100}%;
+    width:${size}px; height:${size}px;
+    --d:${3+Math.random()*5}s;
+    --min:${0.05+Math.random()*0.1};
+    --max:${0.2+Math.random()*0.4};
+    animation-delay:${Math.random()*6}s;
+  `;
+  document.querySelector('.nebula').after(el);
+}
+
+// ─── Audio calmante (tono binaurale 432Hz + 436Hz) ─────
+let audioCtx = null;
+let gainNode = null;
+let osc1 = null, osc2 = null;
+
+function startAudio() {
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    gainNode = audioCtx.createGain();
+    gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.04, audioCtx.currentTime + 3);
+    gainNode.connect(audioCtx.destination);
+
+    osc1 = audioCtx.createOscillator();
+    osc1.type = 'sine';
+    osc1.frequency.value = 432;
+
+    osc2 = audioCtx.createOscillator();
+    osc2.type = 'sine';
+    osc2.frequency.value = 436;
+
+    const pan1 = audioCtx.createStereoPanner(); pan1.pan.value = -1;
+    const pan2 = audioCtx.createStereoPanner(); pan2.pan.value = 1;
+
+    osc1.connect(pan1); pan1.connect(gainNode);
+    osc2.connect(pan2); pan2.connect(gainNode);
+    osc1.start(); osc2.start();
+  } catch(e) {}
+}
+
+function stopAudio() {
+  if (gainNode && audioCtx) {
+    gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2);
+  }
+}
+
+// ─── Navigazione ──────────────────────────────────────
+const screens = { sos:'screen-sos', breath:'screen-breath', ground:'screen-ground', end:'screen-end' };
+const dotMap  = { sos:0, breath:1, ground:2, end:3 };
+let currentScreen = 'sos';
+
+function goTo(name) {
+  document.getElementById(screens[currentScreen]).classList.add('hidden');
+  document.getElementById('dot-'+dotMap[currentScreen]).classList.remove('active');
+  currentScreen = name;
+  document.getElementById(screens[name]).classList.remove('hidden');
+  document.getElementById('dot-'+dotMap[name]).classList.add('active');
+  if (name === 'breath') { startAudio(); startBreath(); }
+  if (name === 'ground') { stopAudio(); initGround(); }
+  if (name === 'end')    { stopAudio(); }
+  if (name === 'sos')    { stopAudio(); resetAll(); }
+}
+
+// ─── Respiro 4-7-8 ────────────────────────────────────
+const PHASES = [
+  { label: 'Inspira',   dur: 4, scale: 1.35, phrase: 'Riempi lentamente i polmoni…' },
+  { label: 'Trattieni', dur: 7, scale: 1.35, phrase: 'Tieni il respiro.' },
+  { label: 'Espira',    dur: 8, scale: 1.0,  phrase: 'Lascia andare tutto…' },
+];
+let breathTimer = null;
+let breathPhase = 0;
+let breathCount = 0;
+let cyclesDone  = 0;
+const TARGET_CYCLES = 4;
+
+function startBreath() {
+  breathPhase = 0; breathCount = 0; cyclesDone = 0;
+  document.getElementById('breath-next').style.opacity = '0';
+  document.getElementById('breath-next').style.pointerEvents = 'none';
+  setTimeout(() => runPhase(), 1200);
+}
+
+function runPhase() {
+  const ph = PHASES[breathPhase];
+  const circle = document.getElementById('breath-circle');
+  const label  = document.getElementById('breath-label');
+  const phrase = document.getElementById('breath-phrase');
+  const counter= document.getElementById('breath-counter');
+
+  label.style.opacity = '0';
+  setTimeout(() => {
+    label.textContent = ph.label;
+    label.style.opacity = '1';
+  }, 300);
+
+  phrase.style.opacity = '0';
+  setTimeout(() => {
+    phrase.innerHTML = ph.phrase;
+    phrase.style.opacity = '1';
+  }, 300);
+
+  // Animazione cerchio
+  const duration = ph.dur * 1000;
+  const startScale = parseFloat(circle.style.transform?.replace(/[^0-9.]/g,'') || '1');
+  const endScale   = ph.scale;
+  const startTime  = performance.now();
+
+  function animate(now) {
+    const t = Math.min((now - startTime) / duration, 1);
+    const eased = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+    const s = startScale + (endScale - startScale) * eased;
+    circle.style.transform = `scale(${s})`;
+    counter.textContent = Math.ceil(ph.dur - t * ph.dur) || '';
+    if (t < 1) requestAnimationFrame(animate);
+    else nextPhase();
+  }
+  requestAnimationFrame(animate);
+}
+
+function nextPhase() {
+  breathPhase++;
+  if (breathPhase >= PHASES.length) {
+    breathPhase = 0;
+    cyclesDone++;
+    if (cyclesDone >= TARGET_CYCLES) {
+      document.getElementById('breath-label').textContent = 'Ottimo ✦';
+      document.getElementById('breath-phrase').innerHTML = 'La tua mente inizierà a calmarsi.✦';
+      document.getElementById('breath-counter').textContent = '';
+      const btn = document.getElementById('breath-next');
+      btn.style.opacity = '1'; btn.style.pointerEvents = 'auto';
+      return;
+    }
+  }
+  runPhase();
+}
+
+// ─── Grounding 5-4-3-2-1 ──────────────────────────────
+const GROUND_STEPS = [
+  { n:5, sense:'Vedere',  title:'Trova 5 cose<br>che riesci a <em>vedere</em>.', desc:'Un oggetto, un colore, una forma — qualsiasi cosa intorno a te.' },
+  { n:4, sense:'Toccare', title:'Trova 4 cose<br>che riesci a <em>toccare</em>.', desc:'Senti la texture, la temperatura, la consistenza.' },
+  { n:3, sense:'Sentire', title:'Ascolta 3 suoni<br>che riesci a <em>sentire</em>.', desc:'Anche il più piccolo rumore conta — il vento, un respiro.' },
+  { n:2, sense:'Odorare', title:'Trova 2 odori<br>che riesci a <em>sentire</em>.', desc:'L\'aria, la tua pelle, qualcosa vicino a te.' },
+  { n:1, sense:'Gustare', title:'Nota 1 sapore<br>in bocca adesso.', desc:'Deglutisci. Cosa senti? Anche niente è una risposta.' },
+];
+let gStep = 0;
+let gFound = 0;
+
+function initGround() {
+  gStep = 0; gFound = 0;
+  renderGroundStep();
+}
+
+function renderGroundStep() {
+  const s = GROUND_STEPS[gStep];
+  document.getElementById('g-num').textContent = s.n;
+  document.getElementById('g-title').innerHTML = s.title;
+  document.getElementById('g-desc').textContent = s.desc;
+
+  const dots = document.getElementById('g-dots');
+  dots.innerHTML = '';
+  for (let i = 0; i < s.n; i++) {
+    const d = document.createElement('div');
+    d.className = 'ground-dot' + (i < gFound ? ' done' : '');
+    dots.appendChild(d);
+  }
+
+  const btn = document.getElementById('g-btn');
+  if (gFound >= s.n) {
+    if (gStep >= GROUND_STEPS.length - 1) {
+      btn.textContent = 'Ho finito →';
+      btn.onclick = () => goTo('end');
+    } else {
+      btn.textContent = 'Prossimo senso →';
+      btn.onclick = () => { gStep++; gFound = 0; renderGroundStep(); };
+    }
+  } else {
+    btn.textContent = 'Ne ho trovata una →';
+    btn.onclick = groundNext;
+  }
+}
+
+function groundNext() {
+  const s = GROUND_STEPS[gStep];
+  if (gFound < s.n) {
+    gFound++;
+    renderGroundStep();
+  }
+}
+
+// ─── Reset ─────────────────────────────────────────────
+function resetAll() {
+  if (breathTimer) clearInterval(breathTimer);
+  document.getElementById('breath-circle').style.transform = 'scale(1)';
+  document.getElementById('breath-label').textContent = 'Preparati...';
+  document.getElementById('breath-counter').textContent = '';
+  document.getElementById('breath-phrase').innerHTML = 'Siediti comodamente.';
+}
+</script>
+</body>
+</html>
